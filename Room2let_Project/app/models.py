@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db.models.deletion import CASCADE
 from django.conf import settings
+from .managers import UserProfileManager
 
 # Create your models here.
 
@@ -11,6 +12,9 @@ class UserProfile(AbstractUser):
         ('agent', 'Agent'),
     )
 
+    email = models.EmailField(unique=True)
+    name = models.CharField(max_length=100)
+    username = models.CharField(max_length=100, unique=True)
     phone_number = models.CharField(max_length=100)
     address = models.TextField()
     role = models.CharField(max_length=100, choices=ROLES, default='user')
@@ -19,9 +23,14 @@ class UserProfile(AbstractUser):
     profile_picture = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
+
+    objects = UserProfileManager()
     
     def __str__(self):
-        return f"{self.username} - {self.role}"
+        return f"{self.email} - {self.role}"
     
 
 class Property(models.Model):
@@ -72,5 +81,7 @@ class Features(models.Model):
     property = models.ForeignKey(Property, on_delete=CASCADE)
     name = models.CharField(max_length=100)
     
+    def __str__(self):
+        return self.name
 
 

@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -32,6 +33,8 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'app',
+    "drf_spectacular",
+    "drf_spectacular_sidecar",
     'corsheaders',
     'rest_framework',
     'rest_framework.authtoken',
@@ -58,14 +61,48 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True
 
+
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ]
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # Use JWT
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',  # Require authentication globally
+    ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
 }
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),  # 1 day validity
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),  # 7 days validity
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),  # Matches Swagger UI "http, Bearer"
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Room2Let API",
+    "DESCRIPTION": "API documentation for Room2Let",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SWAGGER_UI_SETTINGS": {
+        "persistAuthorization": True,  # Keeps authentication after refresh
+    },
+    "COMPONENT_SPLIT_REQUEST": True,
+    "AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication"
+    ],
+    "SECURITY_DEFINITIONS": {
+        "jwtAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+        }
+    },
+}
+
+
 
 ROOT_URLCONF = 'Room2let_Project.urls'
 
@@ -115,6 +152,10 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
+]
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
 ]
 
 
