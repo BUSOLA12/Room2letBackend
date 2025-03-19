@@ -182,3 +182,12 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'app.UserProfile'
+
+FRONTEND_URL = 'http://localhost:3000'  # Change to your frontend URL
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'iyiolaolubusola@gmail.com'
+EMAIL_HOST_PASSWORD = 'dzto imnk ahst ltwv'
+DEFAULT_FROM_EMAIL = 'iyiolaolubusola@gmail.com'

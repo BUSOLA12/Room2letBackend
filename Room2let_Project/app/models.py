@@ -3,6 +3,10 @@ from django.contrib.auth.models import AbstractUser
 from django.db.models.deletion import CASCADE
 from django.conf import settings
 from .managers import UserProfileManager
+from django.utils.crypto import get_random_string
+from django.core.mail import send_mail
+from django.conf import settings
+
 
 # Create your models here.
 
@@ -13,7 +17,7 @@ class UserProfile(AbstractUser):
     )
 
     email = models.EmailField(unique=True)
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, default='name')
     username = models.CharField(max_length=100, unique=True)
     phone_number = models.CharField(max_length=100)
     address = models.TextField()
@@ -23,11 +27,15 @@ class UserProfile(AbstractUser):
     profile_picture = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    password_reset_token = models.CharField(max_length=255, blank=True, null=True)
+    password_reset_token_expiry = models.DateTimeField(blank=True, null=True)
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = ['username', 'name', 'role']
 
     objects = UserProfileManager()
+
+
     
     def __str__(self):
         return f"{self.email} - {self.role}"
