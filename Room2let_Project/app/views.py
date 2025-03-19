@@ -14,13 +14,8 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.utils.http import urlsafe_base64_decode
 # from django.utils.encoding import force_text
+from .serializers import SignupSerializer, PropertySerializer, LoginSerializer, UserProfileSerializer, Send_password_request_Token_serializer, PasswordResetConfirmViewSerializer
 
-
-
-from .serializers import SignupSerializer, LoginSerializer, UserProfileSerializer, Send_password_request_Token_serializer, PasswordResetConfirmViewSerializer
-from .schemas import signup_schema, login_schema, edit_profile_schema
-
-from .serializers import PropertySerializer, SignupSerializer, LoginSerializer, UserProfileSerializer
 from .schemas import (
     signup_schema, 
     login_schema, 

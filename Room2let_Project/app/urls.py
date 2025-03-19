@@ -1,5 +1,5 @@
 from django.urls import path, re_path
-from .views import SignupView, LoginView, ProfileView, LogoutView, RefreshTokenView, Send_password_request_Token, PasswordResetConfirmView, List_Users_based_on_role
+from .views import SignupView, LoginView, ProfileView, LogoutView, Send_password_request_Token, PasswordResetConfirmView, List_Users_based_on_role
 from .views import SignupView, LoginView, ProfileView, PropertyView, PublicPropertyAPIView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
