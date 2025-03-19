@@ -1,5 +1,6 @@
 from django.urls import path, re_path
 from .views import SignupView, LoginView, ProfileView, LogoutView, RefreshTokenView, Send_password_request_Token, PasswordResetConfirmView, List_Users_based_on_role
+from .views import SignupView, LoginView, ProfileView, PropertyView, PublicPropertyAPIView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 urlpatterns = [
@@ -13,7 +14,13 @@ urlpatterns = [
     path('auth/password-reset/', Send_password_request_Token.as_view(), name='Send-reset-token'),
     path('auth/password-reset-confirm/', PasswordResetConfirmView.as_view(), name='Confirm-password'),
 
-     # Spectacular Schema Endpoints
+    # property urls
+    path('property/agent/', PropertyView.as_view(), name='property'),
+    path('property/<int:pk>/agent', PropertyView.as_view(), name='property-detail'),
+    path('property/', PublicPropertyAPIView.as_view(), name='public-property'),
+    path('property/<int:pk>/', PublicPropertyAPIView.as_view(), name='public-property'),
+
+    # Spectacular Schema Endpoints
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
     path('docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc-ui'),

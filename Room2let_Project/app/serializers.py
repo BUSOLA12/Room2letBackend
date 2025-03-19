@@ -5,6 +5,8 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 
+from .models import Property
+
 UserProfile = get_user_model()
 
 class SignupSerializer(serializers.ModelSerializer):
@@ -44,7 +46,7 @@ class LoginSerializer(serializers.Serializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ['name', 'username', 'address', 'email', 'profile_picture', 'about', 'phone_number']  # Lists everything in UserProfile
+        fields = ['name', 'username', 'role', 'address', 'email', 'profile_picture', 'about', 'phone_number']  # Lists everything in UserProfile
         read_only_fields = ['property_count', 'created_at', 'updated_at']
 
     def update(self, instance, validated_data):
@@ -100,3 +102,10 @@ class PasswordResetConfirmViewSerializer(serializers.Serializer):
         self.user.set_password(self.validated_data.get('password'))
         self.user.save()
         return self.user
+
+
+class PropertySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Property
+        fields = '__all__'
+        read_only_fields = ['user', 'created_at', 'updated_at']  # Ensure user is read-only 

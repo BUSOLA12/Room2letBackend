@@ -86,7 +86,7 @@ class Property(models.Model):
         return self.Title
 
 class Features(models.Model):
-    property = models.ForeignKey(Property, on_delete=CASCADE)
+    property = models.ManyToManyField(Property)
     name = models.CharField(max_length=100)
     
     def __str__(self):
