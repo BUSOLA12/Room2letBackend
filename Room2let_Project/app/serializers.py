@@ -57,7 +57,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return instance
 
 
-class Send_password_request_Token_serializer(serializers.Serializer):
+class SendPasswordRequestTokenSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
     def validate(self, data):
@@ -70,7 +70,6 @@ class Send_password_request_Token_serializer(serializers.Serializer):
         return data
     
 class PasswordResetConfirmViewSerializer(serializers.Serializer):
-
     password = serializers.CharField(write_only=True)
     password_confirm = serializers.CharField(write_only=True)
     token = serializers.CharField()

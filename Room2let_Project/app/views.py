@@ -5,26 +5,28 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.generics import RetrieveUpdateAPIView
-from rest_framework_simplejwt.tokens import RefreshToken, AccessToken  # JWT Tokens
+from rest_framework.generics import ListAPIView, CreateAPIView, RetrieveAPIView, UpdateAPIView, DestroyAPIView
+from rest_framework_simplejwt.tokens import RefreshToken  # JWT Tokens
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.core.mail import send_mail
 from django.conf import settings
+from drf_spectacular.utils import extend_schema_view 
 from django.utils.http import urlsafe_base64_decode
 # from django.utils.encoding import force_text
-from .serializers import SignupSerializer, PropertySerializer, LoginSerializer, UserProfileSerializer, Send_password_request_Token_serializer, PasswordResetConfirmViewSerializer
+from .serializers import (
+    SignupSerializer, PropertySerializer, 
+    LoginSerializer, UserProfileSerializer, 
+    SendPasswordRequestTokenSerializer, PasswordResetConfirmViewSerializer
+)
 
 from .schemas import (
-    signup_schema, 
-    login_schema, 
-    edit_profile_schema,
-    add_property_schema,
-    get_my_properties_schema,
-    get_all_properties_schema,
-    update_property_schema,
-    delete_property_schema
+    list_my_properties_schema, create_property_schema, retrieve_property_schema,
+    update_property_schema, delete_property_schema, list_public_properties_schema,
+    retrieve_public_property_schema, signup_schema, login_schema, edit_profile_schema,
+    send_password_request_token_schema, password_reset_confirm_schema, logout_schema,
+    list_users_based_on_role_schema
 )
 
 UserProfile = get_user_model()
@@ -32,9 +34,6 @@ UserProfile = get_user_model()
 #Authentication
 
 class SignupView(APIView):
-    """
-    User Signup API (No Authentication Required)
-    """
     permission_classes = [AllowAny]  # Anyone can sign up
 
     @signup_schema
@@ -63,9 +62,6 @@ class SignupView(APIView):
 
 
 class LoginView(APIView):
-    """
-    User Login API (No Authentication Required)
-    """
     permission_classes = [AllowAny]  # Anyone can log in
 
     @login_schema
@@ -94,11 +90,9 @@ class LoginView(APIView):
 
 
 class LogoutView(APIView):
-    """
-    Logout API
-    """
     permission_classes = [IsAuthenticated]
 
+    @logout_schema
     def post(self, request):
         try:
             # Blacklist the refresh token
@@ -124,7 +118,7 @@ class LogoutView(APIView):
             return Response({"message": "Successfully logged out"}, status=status.HTTP_205_RESET_CONTENT)
 
         except Exception as e:
-            return Response({"error": f"Unexpected error: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"error": str(e)})
         
 #===============================================================================#
 #================================================================================#
@@ -133,16 +127,10 @@ class LogoutView(APIView):
 #View Profile Info
 
 class ProfileView(APIView):
-    """
-    Edit and Get Profile
-    """
     permission_classes = [IsAuthenticated]
 
     @edit_profile_schema
     def get(self, request):
-        """
-        Get the authenticated user's profile.
-        """
         user = request.user
         serializer = UserProfileSerializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -150,9 +138,6 @@ class ProfileView(APIView):
 
     @edit_profile_schema
     def patch(self, request):
-        """
-        Edit the authenticated user's profile.
-        """
         user = request.user
         serializer = UserProfileSerializer(user, data=request.data, partial=True)
         
@@ -163,10 +148,10 @@ class ProfileView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
-class List_Users_based_on_role(APIView):
-
+class ListUsersbasedOnRole(APIView):
     permission_classes = [IsAuthenticated]
 
+    @list_users_based_on_role_schema
     def get(self, request):
 
         role = request.query_params.get("role", None)
@@ -196,13 +181,13 @@ class List_Users_based_on_role(APIView):
 
 #Password reset   
 
-class Send_password_request_Token(APIView):
-
+class SendPasswordRequestToken(APIView):
     permission_classes = [AllowAny]
 
+    @send_password_request_token_schema
     def post(self, request):
         # validate email
-        serializer = Send_password_request_Token_serializer(data=request.data)
+        serializer = SendPasswordRequestTokenSerializer(data=request.data)
 
         if serializer.is_valid():
 
@@ -248,8 +233,8 @@ class Send_password_request_Token(APIView):
 class PasswordResetConfirmView(APIView):
     permission_classes = [AllowAny]
 
+    @password_reset_confirm_schema
     def post(self, request):
-
         serializer = PasswordResetConfirmViewSerializer(data=request.data)
 
         if serializer.is_valid():
@@ -260,82 +245,89 @@ class PasswordResetConfirmView(APIView):
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-#====================================================================================#
-#====================================================================================#
+#--------------------------------------------------------------------------------------#
 
-# Property Views
-
-class PropertyView(APIView):
+@extend_schema_view(
+    get=list_my_properties_schema
+)
+class ListPropertiesView(ListAPIView):
+    serializer_class = PropertySerializer
     permission_classes = [IsAuthenticated, IsAgentOrReadOnly]
 
-    @get_my_properties_schema
-    def get(self, request, pk=None):
-        """Agents can retrieve only their properties."""
-        if not request.user.is_authenticated or request.user.role != 'agent':
-            return Response({"error": "Only agents can view their own properties"}, status=status.HTTP_403_FORBIDDEN)
+    def get_queryset(self):
+        if self.request.user.role != 'agent':
+            return Property.objects.none()
+        return Property.objects.filter(user=self.request.user)
 
-        if pk:
-            try:
-                property_obj = Property.objects.get(pk=pk, user=request.user)
-                serializer = PropertySerializer(property_obj)
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            except Property.DoesNotExist:
-                return Response({"error": "Property not found"}, status=status.HTTP_404_NOT_FOUND)
+@extend_schema_view(
+    post=create_property_schema
+)
+class CreatePropertyView(CreateAPIView):
+    serializer_class = PropertySerializer
+    permission_classes = [IsAuthenticated, IsAgentOrReadOnly]
 
-        properties = Property.objects.filter(user=request.user)
-        serializer = PropertySerializer(properties, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)  
 
+@extend_schema_view(
+    get=retrieve_property_schema
+)
+class RetrievePropertyView(RetrieveAPIView):
+    serializer_class = PropertySerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = "pk"
 
-    @add_property_schema
-    def post(self, request):
-        """Create a new property (Only agents can create)"""
-        serializer = PropertySerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(user=request.user)  # Assign logged-in user as the property owner
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    @update_property_schema
-    def put(self, request, pk):
-        """Update a property (Only the agent who owns the property can update)"""
+    def get_object(self):
         try:
-            property_obj = Property.objects.get(pk=pk, user=request.user)
+            return Property.objects.get(pk=self.kwargs["pk"], user=self.request.user)
         except Property.DoesNotExist:
-            return Response({"error": "Property not found or you do not have permission"}, status=status.HTTP_404_NOT_FOUND)
+            self.permission_denied(
+                self.request,
+                message="Property not found or you do not have permission."
+            )
 
-        serializer = PropertySerializer(property_obj, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+@extend_schema_view(
+    patch=update_property_schema
+)
+class UpdatePropertyView(UpdateAPIView):
+    serializer_class = PropertySerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = "pk"
+    http_method_names = ["patch"]  
 
-    @delete_property_schema
-    def delete(self, request, pk):
-        """Delete a property (Only the agent who owns the property can delete)"""
-        try:
-            property_obj = Property.objects.get(pk=pk, user=request.user)
-            property_obj.delete()
-            return Response({"message": "Property deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
-        except Property.DoesNotExist:
-            return Response({"error": "Property not found or you do not have permission"}, status=status.HTTP_404_NOT_FOUND)
+    def get_queryset(self):
+        return Property.objects.filter(user=self.request.user)
 
 
-class PublicPropertyAPIView(APIView):
-    """Anyone can view all properties from all agents."""
+@extend_schema_view(
+    delete=delete_property_schema
+)
+class DeletePropertyView(DestroyAPIView):
+    serializer_class = PropertySerializer
+    permission_classes = [IsAuthenticated, IsAgentOrReadOnly]
+    lookup_field = "pk"
+
+    def get_queryset(self):
+        return Property.objects.filter(user=self.request.user)
+
+
+@extend_schema_view(
+    get=list_public_properties_schema
+)
+class ListPublicPropertiesView(ListAPIView):
+    serializer_class = PropertySerializer
     permission_classes = [AllowAny]
 
-    @get_all_properties_schema
-    def get(self, request, pk=None):
-        """Retrieve all properties or a single property."""
-        if pk:
-            try:
-                property_obj = Property.objects.get(pk=pk)
-                serializer = PropertySerializer(property_obj)
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            except Property.DoesNotExist:
-                return Response({"error": "Property not found"}, status=status.HTTP_404_NOT_FOUND)
+    def get_queryset(self):
+        return Property.objects.all()
 
-        properties = Property.objects.all()
-        serializer = PropertySerializer(properties, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+@extend_schema_view(
+    get=retrieve_public_property_schema
+)
+class RetrievePublicPropertyView(RetrieveAPIView):
+    serializer_class = PropertySerializer
+    permission_classes = [AllowAny]
+    lookup_field = "pk"
+
+    def get_queryset(self):
+        return Property.objects.all()
