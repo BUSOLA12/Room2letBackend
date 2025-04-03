@@ -1,12 +1,12 @@
 from django.contrib.auth import authenticate, get_user_model
-from .models import Property
+from .models import Property, BlacklistedAccessToken
 from .permissions import IsAgentOrReadOnly
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.generics import RetrieveUpdateAPIView
-from rest_framework_simplejwt.tokens import RefreshToken  # JWT Tokens
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken  # JWT Tokens
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
@@ -101,15 +101,31 @@ class LogoutView(APIView):
 
     def post(self, request):
         try:
-            refresh_token = request.data["refresh"]
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-            return Response(status=status.HTTP_205_RESET_CONTENT)
+            # Blacklist the refresh token
+            refresh_token = request.data.get("refresh")
+            if not refresh_token:
+                return Response({"error": "Refresh token is required"}, status=status.HTTP_400_BAD_REQUEST) 
+            
+            try:
+                refresh = RefreshToken(refresh_token)
+                refresh.blacklist()
+            except Exception as e:
+                return Response({"error": "Invalid refresh token: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST) 
+
+            # Blacklist the access token
+            auth_header = request.headers.get("Authorization")
+            if auth_header and "Bearer" in auth_header:
+                access_token = auth_header.split(" ")[1]
+                BlacklistedAccessToken.objects.create(token=access_token)
+
+            else:
+                return Response({"error": "Access token is missing or invalid"}, status=status.HTTP_400_BAD_REQUEST)
+
+            return Response({"message": "Successfully logged out"}, status=status.HTTP_205_RESET_CONTENT)
+
         except Exception as e:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": f"Unexpected error: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
         
-
-
 #===============================================================================#
 #================================================================================#
 

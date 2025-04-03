@@ -92,4 +92,9 @@ class Features(models.Model):
     def __str__(self):
         return self.name
 
+class BlacklistedAccessToken(models.Model):
+    token = models.CharField(max_length=1000, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return self.token
