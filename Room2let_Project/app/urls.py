@@ -6,7 +6,7 @@ from .views import (
     CreatePropertyView, UpdatePropertyView, 
     DeletePropertyView, RetrievePropertyView, 
     ListPublicPropertiesView, RetrievePublicPropertyView,
-    ListUsersbasedOnRole
+    ListUsersbasedOnRole, SearchPropertiesView
 )
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
@@ -29,6 +29,7 @@ urlpatterns = [
     path('property/agent/delete/<int:pk>', DeletePropertyView.as_view(), name='delete-property'),
     path('property/public', ListPublicPropertiesView.as_view(), name='public-properties'),
     path('property/public/detail/<int:pk>', RetrievePublicPropertyView.as_view(), name='public-property-detail'),
+    path('property/search', SearchPropertiesView.as_view(), name='search-properties'),
 
     # Spectacular Schema Endpoints
     path('schema/', SpectacularAPIView.as_view(), name='schema'),

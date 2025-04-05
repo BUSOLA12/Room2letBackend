@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Email from {{ site_name }}{% endblock %}</title>
+    <style type="text/css">
+        /* Base styling */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f5f5f5;
+        }
+        
+        /* Container */
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+        
+        /* Header */
+        .header {
+            padding: 25px;
+            text-align: center;
+            background-color: #3498db;
+            color: white;
+        }
+        
+        /* Content */
+        .content {
+            padding: 30px;
+        }
+        
+        /* Button styling */
+        .button {
+            display: inline-block;
+            padding: 12px 20px;
+            margin: 20px 0;
+            font-size: 16px;
+            color: white;
+            background-color: #3498db;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        /* Footer styling */
+        .footer {
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #666666;
+            background-color: #f5f5f5;
+            border-top: 1px solid #eeeeee;
+        }
+        
+        /* Responsive styling */
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+            }
+            
+            .content, .header, .footer {
+                padding: 15px !important;
+            }
+            
+            .button {
+                display: block;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>{{ site_name }}</h1>
+        </div>
+        
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+        
+        <div class="footer">
+            <p>© {% now "Y" %} {{ site_name }}. All rights reserved.</p>
+            {% if support_email %}
+            <p>If you need assistance, please contact <a href="mailto:{{ support_email }}">{{ support_email }}</a></p>
+            {% endif %}
+            <p>This is an automated message, please do not reply directly to this email.</p>
+        </div>
+    </div>
+</body>
+</html>

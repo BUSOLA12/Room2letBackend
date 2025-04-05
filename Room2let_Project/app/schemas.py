@@ -1,4 +1,6 @@
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
 from .serializers import (
     SignupSerializer, 
@@ -6,7 +8,7 @@ from .serializers import (
     PropertySerializer,
     UserProfileSerializer,
     SendPasswordRequestTokenSerializer,
-    PasswordResetConfirmViewSerializer
+    PasswordResetConfirmViewSerializer,
 )
 
 # Authentication Schemas
@@ -161,4 +163,20 @@ retrieve_public_property_schema = extend_schema(
     summary="Retrieve Public Property",
     description="Retrieves details of a single property available to the public.",
     responses={200: serializers.Serializer, 404: {"description": "Property not found"}},
+)
+
+search_properties_schema = extend_schema(
+    summary="Search for Properties",
+    request=PropertySerializer,
+    description="Retrieves a list of searched properties via keyword, state, or local government area",
+    parameters=[
+        OpenApiParameter(name="property_type", description="Filter by property type", required=False, type=str),
+        OpenApiParameter(name="purpose", description="Filter by purpose (e.g., rent, sale)", required=False, type=str),
+        OpenApiParameter(name="state", description="Filter by state", required=False, type=str),
+        OpenApiParameter(name="local_govt", description="Filter by local government area", required=False, type=str),
+        OpenApiParameter(name="area", description="Filter by area or nearby location", required=False, type=str),
+        OpenApiParameter(name="max_price", description="Filter by maximum price", required=False, type=float),
+        OpenApiParameter(name="bedrooms", description="Filter by minimum number of bedrooms", required=False, type=int),
+    ],
+    responses={200: PropertySerializer(many=True)},
 )

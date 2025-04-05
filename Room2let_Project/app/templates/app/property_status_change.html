@@ -1,0 +1,33 @@
+{% extends "app/base_email.html" %}
+
+{% block title %}Property Status Update - {{ site_name }}{% endblock %}
+
+{% block content %}
+<h2>Property Status Update</h2>
+<p>Hello,</p>
+<p>We're writing to inform you that the status of your property has been updated:</p>
+
+<div style="background-color: #f5f5f5; padding: 15px; border-radius: 4px; margin: 20px 0;">
+    <h3 style="margin-top: 0; color: #3498db;">{{ property_title }}</h3>
+    <p>Status: 
+        {% if property_status == 'APPROVED' %}
+            <span style="font-weight: bold; color: #2ecc71;">{{ property_status }}</span>
+        {% elif property_status == 'REJECTED' %}
+            <span style="font-weight: bold; color: #e74c3c;">{{ property_status }}</span>
+        {% elif property_status == 'PENDING' %}
+            <span style="font-weight: bold; color: #f39c12;">{{ property_status }}</span>
+        {% else %}
+            <span style="font-weight: bold;">{{ property_status }}</span>
+        {% endif %}
+    </p>
+</div>
+
+<div style="text-align: center;">
+    <a href="{{ dashboard_url }}" class="button">View Dashboard</a>
+</div>
+
+<p>You can view more details about your property by visiting your dashboard.</p>
+
+<p>Thank you,<br>
+The {{ site_name }} Team</p>
+{% endblock %}

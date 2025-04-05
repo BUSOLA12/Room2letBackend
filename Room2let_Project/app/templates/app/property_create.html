@@ -1,0 +1,23 @@
+{% extends "app/base_email.html" %}
+
+{% block title %}New Property Notification - {{ site_name }}{% endblock %}
+
+{% block content %}
+<h2>New Property Added</h2>
+<p>Hello Admin,</p>
+<p>A new property has been added to the system and requires your review:</p>
+
+<div style="background-color: #f5f5f5; padding: 15px; border-radius: 4px; margin: 20px 0;">
+    <h3 style="margin-top: 0; color: #3498db;">{{ property_title }}</h3>
+    <p>This property was just listed and is awaiting your approval.</p>
+</div>
+
+<div style="text-align: center;">
+    <a href="{{ admin_url }}" class="button">Review Property</a>
+</div>
+
+<p>Please review this property at your earliest convenience.</p>
+
+<p>Thank you,<br>
+The {{ site_name }} Team</p>
+{% endblock %}

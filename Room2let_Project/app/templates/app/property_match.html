@@ -1,0 +1,29 @@
+{% extends "app/base_email.html" %}
+
+{% block title %}New Property Match - {{ site_name }}{% endblock %}
+
+{% block content %}
+<h2>New Property Match in Your Area</h2>
+<p>Hello,</p>
+<p>Great news! Based on your recent searches, we've found a new property that matches your interests.</p>
+
+<div style="background-color: #f5f5f5; padding: 15px; border-radius: 4px; margin: 20px 0;">
+    <h3 style="margin-top: 0; color: #3498db;">{{ property_title }}</h3>
+    <p><strong>Location:</strong> {{ local_govt }}, {{ state }}</p>
+    {% if property_price %}
+    <p><strong>Price:</strong> {{ property_price }}</p>
+    {% endif %}
+    {% if property_type %}
+    <p><strong>Type:</strong> {{ property_type }}</p>
+    {% endif %}
+</div>
+
+<div style="text-align: center;">
+    <a href="{{ property_url }}" class="button">View Property</a>
+</div>
+
+<p>This property was just listed and matches the area you've been searching for in the past 30 days.</p>
+
+<p>Thank you,<br>
+The {{ site_name }} Team</p>
+{% endblock %}

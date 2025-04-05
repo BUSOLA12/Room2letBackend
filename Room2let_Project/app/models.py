@@ -1,12 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db.models.deletion import CASCADE
-from django.conf import settings
 from .managers import UserProfileManager
-from django.utils.crypto import get_random_string
-from django.core.mail import send_mail
-from django.conf import settings
-
+from django.contrib.auth import get_user_model
 
 # Create your models here.
 
@@ -62,7 +58,13 @@ class Property(models.Model):
         ('modern Pit', 'Modern Pit'),
         ('pit Latrine', 'Pit Latrine'),
     )
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    )
     user = models.ForeignKey(UserProfile, on_delete=CASCADE)
+    status = models.CharField(max_length=100, choices=STATUS_CHOICES, default='pending')
     title = models.CharField(max_length=100)
     property_type = models.CharField(max_length=100)
     price = models.FloatField()
@@ -83,7 +85,7 @@ class Property(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.Title
+        return f"{self.title} - {self.user.email} - {self.status}"
 
 class Features(models.Model):
     property = models.ManyToManyField(Property)
@@ -91,5 +93,16 @@ class Features(models.Model):
     
     def __str__(self):
         return self.name
+
+
+class Interest(models.Model):
+    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    state = models.CharField(max_length=100)
+    local_Govt = models.CharField(max_length=100)
+    search_query = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user} - {self.state} - {self.local_Govt}"
 
 

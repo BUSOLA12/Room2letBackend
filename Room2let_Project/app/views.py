@@ -1,7 +1,8 @@
 from django.contrib.auth import authenticate, get_user_model
-from .models import Property
+from .models import Interest, Property
 from .permissions import IsAgentOrReadOnly
 from rest_framework import status
+from django.db.models import Q
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -14,7 +15,10 @@ from django.core.mail import send_mail
 from django.conf import settings
 from drf_spectacular.utils import extend_schema_view 
 from django.utils.http import urlsafe_base64_decode
-# from django.utils.encoding import force_text
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
+from .emails import password_reset_email
+
 from .serializers import (
     SignupSerializer, PropertySerializer, 
     LoginSerializer, UserProfileSerializer, 
@@ -26,7 +30,7 @@ from .schemas import (
     update_property_schema, delete_property_schema, list_public_properties_schema,
     retrieve_public_property_schema, signup_schema, login_schema, edit_profile_schema,
     send_password_request_token_schema, password_reset_confirm_schema, logout_schema,
-    list_users_based_on_role_schema
+    list_users_based_on_role_schema, search_properties_schema
 )
 
 UserProfile = get_user_model()
@@ -104,9 +108,6 @@ class LogoutView(APIView):
         
 
 
-#--------------------------------------------------------------------------------------#
-
-#View Profile Info
 
 class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
@@ -167,43 +168,17 @@ class SendPasswordRequestToken(APIView):
 
     @send_password_request_token_schema
     def post(self, request):
-        # validate email
         serializer = SendPasswordRequestTokenSerializer(data=request.data)
 
         if serializer.is_valid():
-
-            # Get the email
             email = serializer.validated_data["email"]
-
-            # Get user instance associated with the email
             try:
                 user = UserProfile.objects.get(email=email)
 
                 # generate token for the user instance
                 token = default_token_generator.make_token(user)
                 uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
-
-
-                # send email to the user
-
-                subject ="Password Reset Token"
-
-                reset_url = f"{settings.FRONTEND_URL}/password-reset-confirm/{uidb64}/{token}"
-
-                message = f"""
-                Hello,
-                
-                You have requested to reset your password. Please click the link below to reset your password:
-                
-                {reset_url}
-                
-                If you did not request this, please ignore this email.
-                
-                Thank you.
-                """
-
-                send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [email], fail_silently=False,)
-
+                password_reset_email(uidb64, token, email)
                 return Response({"message": "Password reset token sent to your email if it exists"}, status=status.HTTP_200_OK) 
 
             except UserProfile.DoesNotExist:
@@ -312,3 +287,58 @@ class RetrievePublicPropertyView(RetrieveAPIView):
 
     def get_queryset(self):
         return Property.objects.all()
+
+
+@extend_schema_view(
+    get=search_properties_schema
+)
+class SearchPropertiesView(ListAPIView):
+    serializer_class = PropertySerializer
+    permission_classes = [AllowAny]
+
+
+    def get_queryset(self):
+        request = self.request
+        user = request.user
+
+        # Get query params
+        property_type = request.query_params.get("property_type")
+        purpose = request.query_params.get("purpose")
+        state = request.query_params.get("state")
+        local_govt = request.query_params.get("local_govt")
+        area = request.query_params.get("area")
+        max_price = request.query_params.get("max_price")
+        bedrooms = request.query_params.get("bedrooms")
+
+        filters = Q()
+        if property_type:
+            filters &= Q(property_type__icontains=property_type)
+        if purpose:
+            filters &= Q(purpose__iexact=purpose)
+        if state:
+            filters &= Q(state__icontains=state)
+        if local_govt:
+            filters &= Q(local_Govt__icontains=local_govt)
+        if area:
+            filters &= Q(area_located_or_close_to__icontains=area)
+        if max_price:
+            filters &= Q(price__lte=max_price)
+        if bedrooms:
+            filters &= Q(bedrooms__gte=bedrooms)
+
+        # Reject request if no valid param
+        if not any([property_type, purpose, state, local_govt, area, max_price, bedrooms]):
+            return Property.objects.none()  # Or raise ValidationError if you'd rather
+
+        queryset = Property.objects.filter(filters)
+
+        # Log interest only if local govt is provided and user is authenticated
+        if user.is_authenticated and local_govt:
+            Interest.objects.get_or_create(
+                user=user,
+                state=state or "",
+                local_Govt=local_govt,
+                search_query=f"{property_type or ''} {purpose or ''} {area or ''}".strip()
+            )
+
+        return queryset
