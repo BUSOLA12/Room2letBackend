@@ -107,4 +107,21 @@ class PropertySerializer(serializers.ModelSerializer):
     class Meta:
         model = Property
         fields = '__all__'
-        read_only_fields = ['user', 'created_at', 'updated_at']  # Ensure user is read-only 
+        read_only_fields = ['user', 'status', 'created_at', 'updated_at'] 
+        
+        
+    def create(self, validated_data):
+        validated_data['user'] = self.context['request'].user
+        validated_data['status'] = 'pending'
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        user = self.context['request'].user
+        if 'status' in validated_data:
+            if not user.is_superuser:
+                validated_data.pop('status')
+        return super().update(instance, validated_data) # Ensure user is read-only 
+
+
+# class LogoutSerializer(serializers.ModelSerializer):
+#     token = serializers.CharField()
