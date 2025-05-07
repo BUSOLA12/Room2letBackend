@@ -201,7 +201,6 @@ class PasswordResetConfirmView(APIView):
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-#--------------------------------------------------------------------------------------#
 
 @extend_schema_view(
     get=list_my_properties_schema
